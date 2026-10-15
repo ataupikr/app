@@ -1,0 +1,19 @@
+{
+  "name": "26-motor",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "start": "node server.js",
+    "test": "node --test test/*.test.js",
+    "test:browser": "node test/browser.mjs",
+    "backup": "node scripts/backup.mjs backup",
+    "restore": "node scripts/backup.mjs restore"
+  },
+  "engines": {
+    "node": ">=24"
+  },
+  "devDependencies": {
+    "playwright-core": "^1.64.1"
+  }
+}
