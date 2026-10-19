@@ -1,0 +1,2 @@
+export function dashboardAllowed(id,role){if(['crmReminders','arrivalPlans'].includes(id))return ['Super Admin','Admin','Finance'].includes(role);return id!=='accountingDashboard'||['Super Admin','Finance','Akuntan'].includes(role)}
+export const dashboardPages=[['dashboard','Dashboard Operasional'],['vehicleFrequency','Dashboard Kunjungan'],['masterDashboard','Dashboard Master Data'],['accountingDashboard','Dashboard Akuntansi']];

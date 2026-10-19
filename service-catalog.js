@@ -1,0 +1,16 @@
+export function createServiceCatalog(db){
+ const one=(s,...p)=>db.prepare(s).get(...p),all=(s,...p)=>db.prepare(s).all(...p),run=(s,...p)=>db.prepare(s).run(...p);
+ const fail=(message,status=400)=>{throw Object.assign(Error(message),{status})};
+ const allow=u=>{if(!['Super Admin','Admin'].includes(u.role))fail('Katalog jasa hanya dapat dikelola Super Admin dan Admin.',403)};
+ const text=(v,max)=>{const s=String(v??'').trim().replace(/\s+/g,' ');if(s.length>max)fail('Isian katalog jasa terlalu panjang');return s};
+ db.exec(`CREATE TABLE IF NOT EXISTS service_catalog(id INTEGER PRIMARY KEY,code TEXT NOT NULL UNIQUE COLLATE NOCASE,name TEXT NOT NULL,category TEXT NOT NULL DEFAULT 'Umum',unit TEXT NOT NULL DEFAULT 'pekerjaan',price INTEGER NOT NULL,notes TEXT NOT NULL DEFAULT '',active INTEGER NOT NULL DEFAULT 1,version INTEGER NOT NULL DEFAULT 1,created_by INTEGER NOT NULL REFERENCES users(id),updated_by INTEGER NOT NULL REFERENCES users(id),created TEXT NOT NULL,updated TEXT NOT NULL);`);
+ function save(u,b){allow(u);const code=text(b.code,40).toUpperCase(),name=text(b.name,200),category=text(b.category,100)||'Umum',unit=text(b.unit,40)||'pekerjaan',notes=text(b.notes,1000);
+  if(!/^[A-Z0-9][A-Z0-9._/-]{0,39}$/.test(code)||!name)fail('Kode jasa dan nama jasa wajib diisi. Kode menggunakan huruf, angka, titik, garis miring, atau tanda hubung.');
+  if(b.price===undefined||b.price===null||b.price==='')fail('Harga standar wajib diisi');const price=Number(b.price);if(!Number.isSafeInteger(price)||price<0||price>1_000_000_000_000)fail('Harga standar harus rupiah bulat, tidak negatif, dan tidak melebihi batas');
+  const duplicate=one('SELECT id FROM service_catalog WHERE code=?',code);if(duplicate&&duplicate.id!==Number(b.id))fail('Kode jasa sudah terdaftar');const now=new Date().toISOString();
+  if(b.id){const current=one('SELECT * FROM service_catalog WHERE id=?',Number(b.id));if(!current)fail('Jasa tidak ditemukan');if(Number(b.version)!==current.version)fail('Katalog jasa berubah. Muat data terbaru sebelum menyimpan.',409);run('UPDATE service_catalog SET code=?,name=?,category=?,unit=?,price=?,notes=?,version=version+1,updated_by=?,updated=? WHERE id=?',code,name,category,unit,price,notes,u.id,now,current.id);return {ok:true,id:current.id,version:current.version+1}}
+  const r=run('INSERT INTO service_catalog(code,name,category,unit,price,notes,created_by,updated_by,created,updated) VALUES(?,?,?,?,?,?,?,?,?,?)',code,name,category,unit,price,notes,u.id,u.id,now,now);return {ok:true,id:Number(r.lastInsertRowid),version:1};
+ }
+ function toggle(u,b){allow(u);const current=one('SELECT * FROM service_catalog WHERE id=?',Number(b.id));if(!current)fail('Jasa tidak ditemukan');if(Number(b.version)!==current.version)fail('Katalog jasa berubah. Muat data terbaru.',409);run('UPDATE service_catalog SET active=?,version=version+1,updated_by=?,updated=? WHERE id=?',current.active?0:1,u.id,new Date().toISOString(),current.id);return {ok:true,id:current.id}}
+ return {save,toggle,get:id=>one('SELECT * FROM service_catalog WHERE id=?',Number(id)),list:u=>['Super Admin','Admin'].includes(u.role)?all('SELECT s.*,u.name updated_by_name FROM service_catalog s JOIN users u ON u.id=s.updated_by ORDER BY s.name'):[]};
+}

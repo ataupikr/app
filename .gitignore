@@ -3,3 +3,8 @@ data/
 node_modules/
 backups/
 .env
+
+android/tools/
+android/build/
+android/signing/
+output/android/*.apk
