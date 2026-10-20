@@ -18,5 +18,5 @@ export async function saveDocumentBlob(blob,filename){
  if(window.AndroidDocuments?.saveDocument){if(filename.endsWith('.xlsx')&&!window.AndroidDocuments.supportsExcel?.())throw Error('Perbarui APK Android dari menu Aksi Mobile untuk mengunduh Excel.');const data=await new Promise((resolve,reject)=>{const reader=new FileReader();reader.onload=()=>resolve(reader.result);reader.onerror=reject;reader.readAsDataURL(blob)});window.AndroidDocuments.saveDocument(data,filename);return;}
  const url=URL.createObjectURL(blob),anchor=document.createElement('a');anchor.href=url;anchor.download=filename;anchor.click();setTimeout(()=>URL.revokeObjectURL(url),60000);
 }
-
+ 
 setRowExportSaver(saveDocumentBlob);
